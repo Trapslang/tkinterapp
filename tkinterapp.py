@@ -462,7 +462,7 @@ resultaat.grid(row=12, column=0, columnspan=2)
 
 
 # PAGINA 3: TEKENEN
-label3 = tk.Label(pagina3, text="Vrij Tekenen", font=("Arial", 16), bg="white")
+label3 = tk.Label(pagina3, text="Microsoft paint 2.0", font=("Arial", 16), bg="white")
 label3.pack(pady=10)
 
 frame_kleuren1 = tk.Frame(pagina3, bg="white")
