@@ -35,7 +35,22 @@ def toon_pagina5():
 def toon_pagina6():
     pagina6.tkraise()
 
-# ====== INGEBOUWDE LOGIN CONTROLE ======
+# ====== INGEBOUWDE ACCOUNT CONTROLE ======
+def aanmelden():
+    gebruikersnaam = invoer_naam.get()
+    wachtwoord = invoer_wachtwoord.get()
+
+    if gebruikersnaam == "" or wachtwoord == "":
+        label_status.config(text="Vul alle velden in!", fg="red")
+        return
+
+    with open("login.txt", "w") as bestand:
+        bestand.write(gebruikersnaam + "\n")
+        bestand.write(wachtwoord)
+
+    label_status.config(text="Account aangemaakt!", fg="green")
+
+
 def controleer_login():
     ingevoerde_naam = invoer_naam.get()
     ingevoerd_wachtwoord = invoer_wachtwoord.get()
@@ -436,8 +451,27 @@ label_wachtwoord.grid(row=2, column=0, padx=10, pady=10, sticky="e")
 invoer_wachtwoord = tk.Entry(login_frame, show="*", font=("Arial", 10))
 invoer_wachtwoord.grid(row=2, column=1, padx=10, pady=10)
 
-knop_login = tk.Button(login_frame, text="Inloggen", command=controleer_login, font=("Arial", 10, "bold"), bg="lightblue", padx=10, pady=5)
-knop_login.grid(row=3, column=0, columnspan=2, pady=15)
+knop_login = tk.Button(
+    login_frame,
+    text="Inloggen",
+    command=controleer_login,
+    font=("Arial", 10, "bold"),
+    bg="lightblue",
+    padx=10,
+    pady=5
+)
+knop_login.grid(row=3, column=0, pady=15)
+
+knop_signup = tk.Button(
+    login_frame,
+    text="Sign Up",
+    command=aanmelden,
+    font=("Arial", 10, "bold"),
+    bg="lightgreen",
+    padx=10,
+    pady=5
+)
+knop_signup.grid(row=3, column=1, pady=15)
 
 label_status = tk.Label(login_frame, text="", font=("Arial", 10), bg="white")
 label_status.grid(row=4, column=0, columnspan=2, pady=5)
