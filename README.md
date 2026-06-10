@@ -5,7 +5,8 @@ A Python desktop application built with Tkinter featuring multiple interactive t
 ## Features
 
 ### LOGIN PAGE
-*Added login before accessing the pages.
+*login before accessing the pages.
+*sign up if you don't have anaccount
 ### Settings Page
 * Dark mode
 * Light mode
@@ -72,10 +73,6 @@ Includes:
 * Math module
 * Random module
 
----
-#Add user account in txt file
-*Add username to the first line of the txt document.
-*Add pasword to the second line.
 # Installation
 
 ## 1. Clone the repository
