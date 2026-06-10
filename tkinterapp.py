@@ -11,7 +11,6 @@ fill_kleur = None       # Standaard zijn vormen niet gevuld (transparant)
 dikte = 1
 
 # NIEUWE VARIABELEN VOOR DE VORMEN MODUS
-# Modus kan zijn: "vrij", "lijn_klik1", "lijn_klik2", "rechthoek_klik1", "rechthoek_klik2", "cirkel_klik", "txt_klik1"
 modus = "vrij"          
 start_x = None
 start_y = None
@@ -36,9 +35,40 @@ def toon_pagina5():
 def toon_pagina6():
     pagina6.tkraise()
 
+# ====== INGEBOUWDE LOGIN CONTROLE ======
+def controleer_login():
+    ingevoerde_naam = invoer_naam.get()
+    ingevoerd_wachtwoord = invoer_wachtwoord.get()
+    
+    try:
+        with open("login.txt", "r") as bestand:
+            juiste_naam = bestand.readline().strip()
+            juist_wachtwoord = bestand.readline().strip()
+        
+        if ingevoerde_naam == juiste_naam and ingevoerd_wachtwoord == juist_wachtwoord:
+            label_status.config(text="Login succesvol!", fg="green")
+            
+            # Activeer alle navigatie-opties in de menubalk
+            menu_paginas.entryconfig("Instellingen", state="normal")
+            menu_paginas.entryconfig("Quiz", state="normal")
+            menu_paginas.entryconfig("Tekenen", state="normal")
+            menu_paginas.entryconfig("Grafieken", state="normal")
+            menu_paginas.entryconfig("Memory Spel", state="normal")
+            menu_paginas.entryconfig("Rekenmachine", state="normal")
+            
+            # Stuur de gebruiker door naar de eerste pagina (Instellingen)
+            toon_pagina1()
+        else:
+            label_status.config(text="Onjuiste gebruikersnaam of wachtwoord.", fg="red")
+            
+    except FileNotFoundError:
+        # Gecorrigeerd naar login.txt om te matchen met de open() functie
+        label_status.config(text="Fout: login.txt niet gevonden!", fg="red")
+
 # FUNCTIES VOOR THEMA'S
 def dark_mode():
     venster.config(bg="darkgrey")
+    pagina0.config(bg="darkgrey")  # Ook de loginpagina kleurt mee indien nodig
     pagina1.config(bg="darkgrey")
     pagina2.config(bg="darkgrey")
     pagina3.config(bg="darkgrey")
@@ -49,6 +79,7 @@ def dark_mode():
 
 def light_mode():
     venster.config(bg="#f0f0f0")
+    pagina0.config(bg="white")
     pagina1.config(bg="white")
     pagina2.config(bg="white")
     pagina3.config(bg="white")
@@ -137,12 +168,12 @@ def controleer():
 def activeer_text_modus():
     global modus
     modus = "txt_klik1"
-    canvas_tekenen.config(cursor="xterm") # Text-cursor look
+    canvas_tekenen.config(cursor="xterm")
 
 def activeer_lijn_modus():
     global modus, fill_kleur
     modus = "lijn_klik1"
-    fill_kleur = None # Lijnen kunnen niet gevuld worden
+    fill_kleur = None 
     canvas_tekenen.config(cursor="cross")
 
 def activeer_rechthoek_modus():
@@ -189,21 +220,18 @@ def start_tekenen(event):
         start_y = event.y
         
     elif modus == "txt_klik1":
-        # Haal de tekst op uit de entrybox
         tekst_om_te_tekenen = entry_canvas_tekst.get()
         if tekst_om_te_tekenen == "":
-            tekst_om_te_tekenen = "Tekst" # Standaard fallback
+            tekst_om_te_tekenen = "Tekst"
             
-        # Bereken de lettergrootte op basis van de lijndikte (minimaal 10)
         font_grootte = max(10, dikte * 3)
         
-        # Teken de tekst op het canvas
         canvas_tekenen.create_text(
             event.x, event.y, 
             text=tekst_om_te_tekenen, 
             fill=huidige_kleur, 
             font=("Arial", font_grootte),
-            anchor="w" # Tekst begint vanaf het klikpunt naar rechts
+            anchor="w"
         )
         modus = "vrij"
         canvas_tekenen.config(cursor="")
@@ -370,7 +398,8 @@ container.pack(fill="both", expand=True)
 container.grid_rowconfigure(0, weight=1)
 container.grid_columnconfigure(0, weight=1)
 
-# DE PAGINA-FRAMES (Nu alle 6)
+# DE PAGINA-FRAMES (Nu inclusief pagina0 voor login)
+pagina0 = tk.Frame(container, bg="white")
 pagina1 = tk.Frame(container, bg="white")
 pagina2 = tk.Frame(container, bg="white")
 pagina3 = tk.Frame(container, bg="white")
@@ -378,6 +407,7 @@ pagina4 = tk.Frame(container, bg="white")
 pagina5 = tk.Frame(container, bg="white")
 pagina6 = tk.Frame(container, bg="white")
 
+pagina0.grid(row=0, column=0, sticky="nsew")
 pagina1.grid(row=0, column=0, sticky="nsew")
 pagina2.grid(row=0, column=0, sticky="nsew")
 pagina3.grid(row=0, column=0, sticky="nsew")
@@ -386,7 +416,34 @@ pagina5.grid(row=0, column=0, sticky="nsew")
 pagina6.grid(row=0, column=0, sticky="nsew")
 
 
-# PAGINA 1: INSTELLINGEN
+# ==================== PAGINA 0: LOGIN SCHERM ====================
+# Centraal frame binnen pagina0 om alles netjes uit te lijnen
+login_frame = tk.Frame(pagina0, bg="white")
+login_frame.place(relx=0.5, rely=0.4, anchor="center")
+
+label_titel_login = tk.Label(login_frame, text="Inloggen Vereist", font=("Arial", 16, "bold"), bg="white", fg="blue")
+label_titel_login.grid(row=0, column=0, columnspan=2, pady=20)
+
+label_naam = tk.Label(login_frame, text="Gebruikersnaam:", font=("Arial", 10), bg="white")
+label_naam.grid(row=1, column=0, padx=10, pady=10, sticky="e")
+
+invoer_naam = tk.Entry(login_frame, font=("Arial", 10))
+invoer_naam.grid(row=1, column=1, padx=10, pady=10)
+
+label_wachtwoord = tk.Label(login_frame, text="Wachtwoord:", font=("Arial", 10), bg="white")
+label_wachtwoord.grid(row=2, column=0, padx=10, pady=10, sticky="e")
+
+invoer_wachtwoord = tk.Entry(login_frame, show="*", font=("Arial", 10))
+invoer_wachtwoord.grid(row=2, column=1, padx=10, pady=10)
+
+knop_login = tk.Button(login_frame, text="Inloggen", command=controleer_login, font=("Arial", 10, "bold"), bg="lightblue", padx=10, pady=5)
+knop_login.grid(row=3, column=0, columnspan=2, pady=15)
+
+label_status = tk.Label(login_frame, text="", font=("Arial", 10), bg="white")
+label_status.grid(row=4, column=0, columnspan=2, pady=5)
+
+
+# ==================== PAGINA 1: INSTELLINGEN ====================
 label1 = tk.Label(pagina1, text="Instellingen", font=("Arial", 16), bg="white")
 label1.pack(pady=20)
 
@@ -397,7 +454,7 @@ knop_light = tk.Button(pagina1, text="Light Mode", command=light_mode, width=20)
 knop_light.pack(pady=10)
 
 
-# PAGINA 2: DE QUIZ
+# ==================== PAGINA 2: DE QUIZ ====================
 v1 = tk.StringVar()
 tk.Label(pagina2, text="1. Wat is de hoofdstad van Frankrijk?", font=("Arial", 10, "bold"), bg="white").grid(row=0, column=0, sticky="w", padx=10, pady=(15,5))
 rb1 = tk.Radiobutton(pagina2, text="Parijs", variable=v1, value="Parijs", bg="white")
@@ -411,7 +468,7 @@ try:
     img_orig = tk.PhotoImage(file="Nigeria.png")    
     img = img_orig.subsample(3, 3)                  
     lbl_img = tk.Label(pagina2, image=img, bg="white") 
-    lbl_img.image = img                                                              
+    lbl_img.image = img                                                                              
     lbl_img.grid(row=4, column=0, pady=5)
 except:
     tk.Label(pagina2, text="[Afbeelding mist]", bg="white").grid(row=4, column=0)
@@ -461,8 +518,8 @@ resultaat = tk.Label(pagina2, text="Vul de quiz in!", bg="white")
 resultaat.grid(row=12, column=0, columnspan=2)
 
 
-# PAGINA 3: TEKENEN
-label3 = tk.Label(pagina3, text="Microsoft paint 2.0", font=("Arial", 16), bg="white")
+# ==================== PAGINA 3: TEKENEN ====================
+label3 = tk.Label(pagina3, text="Vrij Tekenen", font=("Arial", 16), bg="white")
 label3.pack(pady=10)
 
 frame_kleuren1 = tk.Frame(pagina3, bg="white")
@@ -476,7 +533,6 @@ frame_dikte.pack(pady=5)
 frame_figuren = tk.Frame(pagina3, bg="white")
 frame_figuren.pack(pady=5)
 
-# INVOERVELD VOOR TEKST MODUS (Nieuw)
 frame_tekst_invoer = tk.Frame(pagina3, bg="white")
 frame_tekst_invoer.pack(pady=5)
 tk.Label(frame_tekst_invoer, text="Tekst voor TXT-modus:", bg="white").pack(side="left", padx=5)
@@ -484,7 +540,6 @@ entry_canvas_tekst = tk.Entry(frame_tekst_invoer, width=20)
 entry_canvas_tekst.insert(0, "Typ hier...")
 entry_canvas_tekst.pack(side="left", padx=5)
 
-# Kleurknoppen
 tk.Button(frame_kleuren1, bg="black", width=4, command=lambda: kies_kleur("black")).pack(side="left", padx=5)
 tk.Button(frame_kleuren1, bg="red", width=4, command=lambda: kies_kleur("red")).pack(side="left", padx=5)
 tk.Button(frame_kleuren1, bg="blue", width=4, command=lambda: kies_kleur("blue")).pack(side="left", padx=5)
@@ -499,19 +554,16 @@ tk.Button(frame_kleuren2, bg="lightgreen",width=4, command= lambda: kies_kleur("
 tk.Button(frame_kleuren2, bg="purple",width=4, command= lambda: kies_kleur("purple")).pack(side="left",padx=5)
 tk.Button(frame_kleuren2, bg="gray",width=4, command= lambda: kies_kleur("gray")).pack(side="left",padx=5)
 
-# Dikteknoppen
 tk.Button(frame_dikte, bg="white", width=10, command=dunner_lijn, text="Lijn dunner").pack(side="left", padx=5)
 tk.Button(frame_dikte, bg="white", width=10, command=dikker_lijn, text="Lijn dikker").pack(side="left", padx=5)
 label_dikte_waarde = tk.Label(frame_dikte, bg="white", text=dikte, font=("Arial", 10, "bold"))
 label_dikte_waarde.pack(side="left", padx=5)
 
-# Figuren
 tk.Button(frame_figuren, bg="white", width=10, command=activeer_lijn_modus, text="Rechte Lijn").pack(side="left", padx=5)
 tk.Button(frame_figuren, bg="white", width=10, command=activeer_rechthoek_modus, text="Rechthoek").pack(side="left", padx=5)
 tk.Button(frame_figuren, bg="white", width=10, command=activeer_cirkel_modus, text="Cirkel").pack(side="left", padx=5)
 tk.Button(frame_figuren, bg="white", width=10, command=activeer_text_modus, text="TXT").pack(side="left", padx=5)
 
-# Het tekenveld
 canvas_tekenen = tk.Canvas(pagina3, bg="white", highlightthickness=1, highlightbackground="black")
 canvas_tekenen.pack(fill="both", expand=True, padx=20, pady=5)
 
@@ -523,7 +575,7 @@ knop_wis = tk.Button(pagina3, text="Wis Tekening", command=wis_canvas)
 knop_wis.pack(pady=10)
 
 
-# PAGINA 4: GRAFIEKEN
+# ==================== PAGINA 4: GRAFIEKEN ====================
 label_titel4 = tk.Label(pagina4, text="Grafiek", font=("Arial", 12, "bold"), bg="white")
 label_titel4.pack(pady=10)
 
@@ -559,7 +611,6 @@ label_titel5.pack(pady=10)
 frame_grid = tk.Frame(pagina5, bg="white")
 frame_grid.pack(pady=10)
 
-# Maak 16 knoppen aan in een 4x4 grid
 for i in range(16):
     knop = tk.Button(frame_grid, text="?", font=("Arial", 14, "bold"), bg="gray", width=6, height=3,
                      command=lambda i=i: kaart_klik(i))
@@ -571,7 +622,6 @@ for i in range(16):
 knop_restart = tk.Button(pagina5, text="Start / Reset Spel", command=start_memory, bg="lightblue")
 knop_restart.pack(pady=15)
 
-# Start de eerste memory-sessie
 start_memory()
 
 
@@ -579,7 +629,6 @@ start_memory()
 label_titel6 = tk.Label(pagina6, text="Wiskundige Tools", font=("Arial", 16, "bold"), bg="white")
 label_titel6.pack(pady=10)
 
-# Deel 1: Pythagoras
 frame_pyth = tk.LabelFrame(pagina6, text="Stelling van Pythagoras (a² + b² = c²)", bg="white", padx=10, pady=10)
 frame_pyth.pack(fill="x", padx=20, pady=5)
 
@@ -595,7 +644,6 @@ tk.Button(frame_pyth, text="Bereken", command=bereken_pythagoras).grid(row=0, co
 label_res_pyth = tk.Label(frame_pyth, text="Schuine zijde (c) = ...", font=("Arial", 10, "bold"), bg="white", fg="blue")
 label_res_pyth.grid(row=1, column=0, columnspan=5, pady=5, sticky="w")
 
-# Deel 2: Cirkel
 frame_cirkel = tk.LabelFrame(pagina6, text="Cirkel Berekenaar", bg="white", padx=10, pady=10)
 frame_cirkel.pack(fill="x", padx=20, pady=5)
 
@@ -607,7 +655,6 @@ tk.Button(frame_cirkel, text="Bereken", command=bereken_cirkel).grid(row=0, colu
 label_res_cirkel = tk.Label(frame_cirkel, text="Oppervlakte & Omtrek = ...", font=("Arial", 10, "bold"), bg="white", fg="green")
 label_res_cirkel.grid(row=1, column=0, columnspan=3, pady=5, sticky="w")
 
-# Deel 3: Geschiedenis (Listbox)
 frame_hist = tk.LabelFrame(pagina6, text="Geschiedenis van Berekeningen", bg="white", padx=10, pady=10)
 frame_hist.pack(fill="both", expand=True, padx=20, pady=10)
 
@@ -626,16 +673,17 @@ knop_wis_hist.pack(pady=5)
 menubalk = tk.Menu(venster)
 
 menu_paginas = tk.Menu(menubalk, tearoff=0)
-menu_paginas.add_command(label="Instellingen", command=toon_pagina1)
-menu_paginas.add_command(label="Quiz", command=toon_pagina2)       
-menu_paginas.add_command(label="Tekenen", command=toon_pagina3)    
-menu_paginas.add_command(label="Grafieken", command=toon_pagina4)
-menu_paginas.add_command(label="Memory Spel", command=toon_pagina5)
-menu_paginas.add_command(label="Rekenmachine", command=toon_pagina6)
+# Alle navgatie-opties starten uitgeschakeld (state="disabled")
+menu_paginas.add_command(label="Instellingen", command=toon_pagina1, state="disabled")
+menu_paginas.add_command(label="Quiz", command=toon_pagina2, state="disabled")       
+menu_paginas.add_command(label="Tekenen", command=toon_pagina3, state="disabled")    
+menu_paginas.add_command(label="Grafieken", command=toon_pagina4, state="disabled")
+menu_paginas.add_command(label="Memory Spel", command=toon_pagina5, state="disabled")
+menu_paginas.add_command(label="Rekenmachine", command=toon_pagina6, state="disabled")
 menubalk.add_cascade(label="Pagina's", menu=menu_paginas)
 venster.config(menu=menubalk)
 
-# Starten op pagina 1
-pagina1.tkraise()
+# Verplicht starten op pagina 0 (Loginscherm)
+pagina0.tkraise()
 
 venster.mainloop()
