@@ -1,7 +1,8 @@
 import tkinter as tk
-import math  # Nodig voor het berekenen van de cirkelstraal en formules
-import random  # Nodig voor het schudden van de memorykaarten
-from tkinter import messagebox, colorchooser  # Voor pop-ups en de kleurkiezer
+import math
+import random
+import hashlib
+from tkinter import messagebox, colorchooser
 
 # GLOBALE VARIABELEN VOOR HET TEKENEN
 old_x = None
@@ -51,35 +52,53 @@ def aanmelden():
     label_status.config(text="Account aangemaakt!", fg="green")
 
 
+import hashlib
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def aanmelden():
+    username = invoer_naam.get()
+    password = invoer_wachtwoord.get()
+
+    if username == "" or password == "":
+        label_status.config(text="Vul alles in!", fg="red")
+        return
+
+    with open("login.txt", "w") as f:
+        f.write(username + "\n")
+        f.write(hash_password(password))
+
+    label_status.config(text="Account aangemaakt!", fg="green")
+
+
 def controleer_login():
-    ingevoerde_naam = invoer_naam.get()
-    ingevoerd_wachtwoord = invoer_wachtwoord.get()
-    
+    username = invoer_naam.get()
+    password = invoer_wachtwoord.get()
+
     try:
-        with open("login.txt", "r") as bestand:
-            juiste_naam = bestand.readline().strip()
-            juist_wachtwoord = bestand.readline().strip()
-        
-        if ingevoerde_naam == juiste_naam and ingevoerd_wachtwoord == juist_wachtwoord:
+        with open("login.txt", "r") as f:
+            saved_user = f.readline().strip()
+            saved_hash = f.readline().strip()
+
+        if username == saved_user and hash_password(password) == saved_hash:
             label_status.config(text="Login succesvol!", fg="green")
-            
-            # Activeer alle navigatie-opties in de menubalk
+
+            # unlock menu
             menu_paginas.entryconfig("Instellingen", state="normal")
             menu_paginas.entryconfig("Quiz", state="normal")
             menu_paginas.entryconfig("Tekenen", state="normal")
             menu_paginas.entryconfig("Grafieken", state="normal")
             menu_paginas.entryconfig("Memory Spel", state="normal")
             menu_paginas.entryconfig("Rekenmachine", state="normal")
-            
-            # Stuur de gebruiker door naar de eerste pagina (Instellingen)
+
             toon_pagina1()
         else:
-            label_status.config(text="Onjuiste gebruikersnaam of wachtwoord.", fg="red")
-            
-    except FileNotFoundError:
-        # Gecorrigeerd naar login.txt om te matchen met de open() functie
-        label_status.config(text="Fout: login.txt niet gevonden!", fg="red")
+            label_status.config(text="Foute login", fg="red")
 
+    except FileNotFoundError:
+        label_status.config(text="Nog geen account gemaakt", fg="red")
 # FUNCTIES VOOR THEMA'S
 def dark_mode():
     venster.config(bg="darkgrey")
@@ -721,3 +740,4 @@ venster.config(menu=menubalk)
 pagina0.tkraise()
 
 venster.mainloop()
+
