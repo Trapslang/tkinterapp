@@ -680,7 +680,7 @@ frame_keuze = tk.Frame(pagina4, bg="white")
 frame_keuze.pack(pady=10)
 
 tk.Label(frame_keuze, text="Kies type grafiek:", bg="white", font=("Arial", 10)).pack(side="left", padx=5)
-combo_grafiek_type = ttk.Combobox(frame_keuze, values=["Staafdiagram (Canvas)", "Cirkeldiagram (Matplotlib)"], state="readonly", width=25)
+combo_grafiek_type = ttk.Combobox(frame_keuze, values=["Staafdiagram", "Cirkeldiagram"], state="readonly", width=25)
 combo_grafiek_type.set("Staafdiagram (Canvas)")  
 combo_grafiek_type.pack(side="left", padx=5)
 
