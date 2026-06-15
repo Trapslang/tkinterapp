@@ -775,6 +775,6 @@ menubalk.add_cascade(label="Pagina's", menu=menu_paginas)
 venster.config(menu=menubalk)
 
 # Verplicht starten op pagina 0 (Loginscherm)
-pagina4.tkraise()
+pagina0.tkraise()
 
 venster.mainloop()
