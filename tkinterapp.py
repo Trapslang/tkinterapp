@@ -1,21 +1,31 @@
 import tkinter as tk
+from tkinter import messagebox, colorchooser
+from tkinter import ttk  
 import math
 import random
 import hashlib
-from tkinter import messagebox, colorchooser
+import numpy as np
+import matplotlib.pyplot as plt
+# Importeer de koppeling tussen Matplotlib en Tkinter
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+plt.style.use('_mpl-gallery-nogrid')
 
 # GLOBALE VARIABELEN VOOR HET TEKENEN
 old_x = None
 old_y = None
-huidige_kleur = "black"  # Standaard tekenen we met zwart
-fill_kleur = None       # Standaard zijn vormen niet gevuld (transparant)
+huidige_kleur = "black"  
+fill_kleur = None       
 dikte = 1
 
 # NIEUWE VARIABELEN VOOR DE VORMEN MODUS
 modus = "vrij"          
 start_x = None
 start_y = None
-tijdelijke_vorm = None  # Houdt de vorm vast tijdens het slepen
+tijdelijke_vorm = None  
+
+# Houdt de huidige actieve Matplotlib canvas widget bij zodat we deze kunnen vernieuwen
+huidige_canvas_widget = None
 
 # FUNCTIES VOOR NAVIGATIE
 def toon_pagina1():
@@ -37,26 +47,8 @@ def toon_pagina6():
     pagina6.tkraise()
 
 # ====== INGEBOUWDE ACCOUNT CONTROLE ======
-def aanmelden():
-    gebruikersnaam = invoer_naam.get()
-    wachtwoord = invoer_wachtwoord.get()
-
-    if gebruikersnaam == "" or wachtwoord == "":
-        label_status.config(text="Vul alle velden in!", fg="red")
-        return
-
-    with open("login.txt", "w") as bestand:
-        bestand.write(gebruikersnaam + "\n")
-        bestand.write(wachtwoord)
-
-    label_status.config(text="Account aangemaakt!", fg="green")
-
-
-import hashlib
-
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
-
 
 def aanmelden():
     username = invoer_naam.get()
@@ -71,7 +63,6 @@ def aanmelden():
         f.write(hash_password(password))
 
     label_status.config(text="Account aangemaakt!", fg="green")
-
 
 def controleer_login():
     username = invoer_naam.get()
@@ -99,10 +90,11 @@ def controleer_login():
 
     except FileNotFoundError:
         label_status.config(text="Nog geen account gemaakt", fg="red")
+
 # FUNCTIES VOOR THEMA'S
 def dark_mode():
     venster.config(bg="darkgrey")
-    pagina0.config(bg="darkgrey")  # Ook de loginpagina kleurt mee indien nodig
+    pagina0.config(bg="darkgrey")  
     pagina1.config(bg="darkgrey")
     pagina2.config(bg="darkgrey")
     pagina3.config(bg="darkgrey")
@@ -329,14 +321,44 @@ def wis_canvas():
 def kies_kleur(kleur):
     global huidige_kleur
     huidige_kleur = kleur
+
+# ==================== LOGIEK GRAFIEKEN (PAGINA 4) ====================
+def maak_kader_leeg():
+    """Verwijdert de oude grafiek/canvas uit het grafiekkader."""
+    global huidige_canvas_widget
+    if huidige_canvas_widget is not None:
+        huidige_canvas_widget.destroy()
+        huidige_canvas_widget = None
+
+def genereer_grafiek():
+    gekozen_type = combo_grafiek_type.get()
     
-def teken_scoregrafiek():
-    canvas1.delete("all")  
-    punten = [int(entry_alex.get()), int(entry_sam.get()), int(entry_noor.get())]
+    try:
+        punten = [int(entry_alex.get()), int(entry_sam.get()), int(entry_noor.get())]
+    except ValueError:
+        messagebox.showerror("Fout", "Vul geldige getallen in bij de scores!")
+        return
+
+    # Maak het kader leeg voordat we een nieuwe grafiek tekenen
+    maak_kader_leeg()
+
+    if gekozen_type == "Staafdiagram":
+        teken_scoregrafiek(punten)
+    elif gekozen_type == "Cirkeldiagram":
+        teken_matplotlib_pie(punten)
+
+def teken_scoregrafiek(punten):
+    global huidige_canvas_widget
+    
+    # Maak ter plekke een nieuw Tkinter Canvas aan in het kader-frame
+    tk_canvas = tk.Canvas(frame_grafiek_kader, width=400, height=300, bg="white", highlightthickness=0)
+    tk_canvas.pack(fill="both", expand=True)
+    huidige_canvas_widget = tk_canvas
+    
     namen = ["Alex", "Sam", "Noor"]
     kleuren = ["blue", "green", "red"]
     
-    canvas1.create_line(40, 250, 350, 250, width=2)
+    tk_canvas.create_line(40, 250, 350, 250, width=2)
     
     x = 60
     for i in range(len(punten)):
@@ -344,10 +366,31 @@ def teken_scoregrafiek():
         kleur = kleuren[i]
         naam = namen[i]
         
-        canvas1.create_rectangle(x, 250 - hoogte, x + 50, 250, fill=kleur)
-        canvas1.create_text(x + 25, 250 - hoogte - 10, text=str(hoogte))
-        canvas1.create_text(x + 25, 265, text=naam)
+        tk_canvas.create_rectangle(x, 250 - hoogte, x + 50, 250, fill=kleur)
+        tk_canvas.create_text(x + 25, 250 - hoogte - 10, text=str(hoogte))
+        tk_canvas.create_text(x + 25, 265, text=naam)
         x += 90   
+
+def teken_matplotlib_pie(punten):
+    global huidige_canvas_widget
+    namen = ["Alex", "Sam", "Noor"]
+    colors = plt.get_cmap('Blues')(np.linspace(0.4, 0.8, len(punten)))
+
+    # Maak de Matplotlib figuur aan (kleiner formaat zodat het in het kader past)
+    fig, ax = plt.subplots(figsize=(4, 3), dpi=100)
+    
+    ax.pie(punten, colors=colors, radius=3, center=(4, 4),
+           wedgeprops={"linewidth": 1, "edgecolor": "white"}, frame=False, autopct='%1.1f%%')
+
+    ax.set(xlim=(0, 8),ylim=(0, 8))
+
+    # Koppel de Matplotlib figuur aan het Tkinter frame via FigureCanvasTkAgg
+    mpl_canvas = FigureCanvasTkAgg(fig, master=frame_grafiek_kader)
+    huidige_canvas_widget = mpl_canvas.get_tk_widget()
+    huidige_canvas_widget.pack(fill="both", expand=True)
+    
+    # Sluit de figuur direct in de achtergrond om memory-leaks en pop-ups te voorkomen
+    plt.close(fig)
 
 # ==================== LOGIEK MEMORY (PAGINA 5) ====================
 memory_knoppen = []
@@ -432,7 +475,7 @@ container.pack(fill="both", expand=True)
 container.grid_rowconfigure(0, weight=1)
 container.grid_columnconfigure(0, weight=1)
 
-# DE PAGINA-FRAMES (Nu inclusief pagina0 voor login)
+# DE PAGINA-FRAMES
 pagina0 = tk.Frame(container, bg="white")
 pagina1 = tk.Frame(container, bg="white")
 pagina2 = tk.Frame(container, bg="white")
@@ -451,7 +494,6 @@ pagina6.grid(row=0, column=0, sticky="nsew")
 
 
 # ==================== PAGINA 0: LOGIN SCHERM ====================
-# Centraal frame binnen pagina0 om alles netjes uit te lijnen
 login_frame = tk.Frame(pagina0, bg="white")
 login_frame.place(relx=0.5, rely=0.4, anchor="center")
 
@@ -470,26 +512,10 @@ label_wachtwoord.grid(row=2, column=0, padx=10, pady=10, sticky="e")
 invoer_wachtwoord = tk.Entry(login_frame, show="*", font=("Arial", 10))
 invoer_wachtwoord.grid(row=2, column=1, padx=10, pady=10)
 
-knop_login = tk.Button(
-    login_frame,
-    text="Inloggen",
-    command=controleer_login,
-    font=("Arial", 10, "bold"),
-    bg="lightblue",
-    padx=10,
-    pady=5
-)
+knop_login = tk.Button(login_frame, text="Inloggen", command=controleer_login, font=("Arial", 10, "bold"), bg="lightblue", padx=10, pady=5)
 knop_login.grid(row=3, column=0, pady=15)
 
-knop_signup = tk.Button(
-    login_frame,
-    text="Sign Up",
-    command=aanmelden,
-    font=("Arial", 10, "bold"),
-    bg="lightgreen",
-    padx=10,
-    pady=5
-)
+knop_signup = tk.Button(login_frame, text="Sign Up", command=aanmelden, font=("Arial", 10, "bold"), bg="lightgreen", padx=10, pady=5)
 knop_signup.grid(row=3, column=1, pady=15)
 
 label_status = tk.Label(login_frame, text="", font=("Arial", 10), bg="white")
@@ -521,7 +547,7 @@ try:
     img_orig = tk.PhotoImage(file="Nigeria.png")    
     img = img_orig.subsample(3, 3)                  
     lbl_img = tk.Label(pagina2, image=img, bg="white") 
-    lbl_img.image = img                                                                              
+    lbl_img.image = img                                                                                                                
     lbl_img.grid(row=4, column=0, pady=5)
 except:
     tk.Label(pagina2, text="[Afbeelding mist]", bg="white").grid(row=4, column=0)
@@ -629,7 +655,7 @@ knop_wis.pack(pady=10)
 
 
 # ==================== PAGINA 4: GRAFIEKEN ====================
-label_titel4 = tk.Label(pagina4, text="Grafiek", font=("Arial", 12, "bold"), bg="white")
+label_titel4 = tk.Label(pagina4, text="Grafiek Menu", font=("Arial", 16, "bold"), bg="white")
 label_titel4.pack(pady=10)
 
 frame_input4 = tk.Frame(pagina4, bg="white")
@@ -650,11 +676,24 @@ entry_noor = tk.Entry(frame_input4, width=5)
 entry_noor.insert(0, "180")  
 entry_noor.grid(row=0, column=5, padx=5)
 
-canvas1 = tk.Canvas(pagina4, width=400, height=300, bg="white", highlightthickness=1, highlightbackground="black")
-canvas1.pack(pady=10)
+frame_keuze = tk.Frame(pagina4, bg="white")
+frame_keuze.pack(pady=10)
 
-knop_teken4 = tk.Button(pagina4, text="Teken Grafiek", command=teken_scoregrafiek)
+tk.Label(frame_keuze, text="Kies type grafiek:", bg="white", font=("Arial", 10)).pack(side="left", padx=5)
+combo_grafiek_type = ttk.Combobox(frame_keuze, values=["Staafdiagram (Canvas)", "Cirkeldiagram (Matplotlib)"], state="readonly", width=25)
+combo_grafiek_type.set("Staafdiagram (Canvas)")  
+combo_grafiek_type.pack(side="left", padx=5)
+
+# DIT IS HET GEMEENSCHAPPELIJKE KADER (Frame) WAAR BINNEN GEWISSELD WORDT
+frame_grafiek_kader = tk.Frame(pagina4, width=400, height=300, bg="white", highlightthickness=1, highlightbackground="black")
+frame_grafiek_kader.pack(pady=10)
+frame_grafiek_kader.pack_propagate(False) # Zorgt ervoor dat het frame exact 400x300 blijft
+
+knop_teken4 = tk.Button(pagina4, text="Genereer Gekozen Grafiek", command=genereer_grafiek, bg="lightgray")
 knop_teken4.pack()
+
+# Direct de eerste grafiek inladen bij het opstarten
+teken_scoregrafiek([150, 230, 180])
 
 
 # ==================== PAGINA 5: MEMORY GAME ====================
@@ -726,7 +765,6 @@ knop_wis_hist.pack(pady=5)
 menubalk = tk.Menu(venster)
 
 menu_paginas = tk.Menu(menubalk, tearoff=0)
-# Alle navgatie-opties starten uitgeschakeld (state="disabled")
 menu_paginas.add_command(label="Instellingen", command=toon_pagina1, state="disabled")
 menu_paginas.add_command(label="Quiz", command=toon_pagina2, state="disabled")       
 menu_paginas.add_command(label="Tekenen", command=toon_pagina3, state="disabled")    
@@ -737,7 +775,6 @@ menubalk.add_cascade(label="Pagina's", menu=menu_paginas)
 venster.config(menu=menubalk)
 
 # Verplicht starten op pagina 0 (Loginscherm)
-pagina0.tkraise()
+pagina4.tkraise()
 
 venster.mainloop()
-
