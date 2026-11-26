@@ -17,7 +17,7 @@ old_y = None
 huidige_kleur = "black"  
 fill_kleur = None       
 dikte = 1
-background = "black"
+
 # NIEUWE VARIABELEN VOOR DE VORMEN MODUS
 modus = "vrij"          
 start_x = None
